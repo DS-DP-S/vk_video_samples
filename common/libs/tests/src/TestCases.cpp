@@ -168,6 +168,90 @@ TestCaseConfig TC001_RGBA_to_NV12() {
     return createRGBA2YCbCr("TC001_RGBA_to_NV12", TestFormat::NV12);
 }
 
+// Linear on BOTH sides, which is what makes this the suite's positive control.
+//
+// With optimal tiling the harness can neither upload the input pattern nor read the
+// output back, so the CPU reference model has nothing to compare against and the case
+// is reported as unvalidated. Linear tiling is mapped directly on both sides, so this
+// case actually exercises the shader: input pattern in, filter runs, output compared
+// against convertRGBAtoNV12() to within the configured tolerance.
+//
+// Keep at least one linear case in every suite. Without one, a suite of optimal-tiled
+// cases reports only that submission did not error -- which is exactly what this
+// harness used to do for all seven of its cases.
+// Linear 4:2:2 control. This is the case that actually verifies the block-ratio and
+// dispatch fix: with a hard-wired 2x2 block against a (w/2, h) dispatch the bottom half
+// of the 4:2:2 chroma plane was never written, which a PSNR comparison against
+// convertRGBAtoNV16() catches and a "did it submit" check does not.
+TestCaseConfig TC005L_RGBA_to_NV16_Linear() {
+    TestCaseConfig config = createRGBA2YCbCr("TC005L_RGBA_to_NV16_Linear",
+                                             TestFormat::NV16,
+                                             VK_SAMPLER_YCBCR_MODEL_CONVERSION_YCBCR_709,
+                                             VK_SAMPLER_YCBCR_RANGE_ITU_FULL,
+                                             256, 256);
+    config.inputs[0].tiling  = TilingMode::Linear;
+    config.outputs[0].tiling = TilingMode::Linear;
+    return config;
+}
+
+// Linear 4:4:4 control. Complements the 4:2:2 case: the same block-ratio change made
+// 4:4:4 dispatch one thread per pixel instead of over-dispatching 4x, so both ratios
+// need a validated case to pin the behaviour.
+TestCaseConfig TC007L_RGBA_to_YUV444_Linear() {
+    TestCaseConfig config = createRGBA2YCbCr("TC007L_RGBA_to_YUV444_Linear",
+                                             TestFormat::YUV444,
+                                             VK_SAMPLER_YCBCR_MODEL_CONVERSION_YCBCR_709,
+                                             VK_SAMPLER_YCBCR_RANGE_ITU_FULL,
+                                             256, 256);
+    config.inputs[0].tiling  = TilingMode::Linear;
+    config.outputs[0].tiling = TilingMode::Linear;
+    return config;
+}
+
+TestCaseConfig TC001L_RGBA_to_NV12_Linear() {
+    // Same model/range as TC001 so tiling is the ONLY difference between them; otherwise
+    // a mismatch here cannot be attributed to the thing under test.
+    TestCaseConfig config = createRGBA2YCbCr("TC001L_RGBA_to_NV12_Linear",
+                                             TestFormat::NV12,
+                                             VK_SAMPLER_YCBCR_MODEL_CONVERSION_YCBCR_709,
+                                             VK_SAMPLER_YCBCR_RANGE_ITU_FULL,
+                                             256, 256);
+    config.inputs[0].tiling  = TilingMode::Linear;
+    config.outputs[0].tiling = TilingMode::Linear;
+    return config;
+}
+
+// Linear narrow-range controls. Every other validated case runs ITU_FULL, and full range
+// is the one setting under which an ignored range flag is indistinguishable from a
+// correct one -- which is how the RGBA->YCbCr shader shipped writing full-range content
+// for an ITU_NARROW request. These two are the cases that fail if that regresses:
+// Y[16,235] / Cb,Cr[16,240] instead of [0,255], a ~16-20/255 systematic offset.
+//
+// 4:2:0 and 4:4:4 rather than all three subsamplings: the range map is affine, so it
+// commutes with the chroma box filter, and 4:2:2 could not disagree with 4:2:0 about it.
+// What does differ is averaged-chroma (4:2:0) versus pass-through chroma (4:4:4).
+TestCaseConfig TC031L_RGBA_to_NV12_LimitedRange_Linear() {
+    TestCaseConfig config = createRGBA2YCbCr("TC031L_RGBA_to_NV12_LimitedRange_Linear",
+                                             TestFormat::NV12,
+                                             VK_SAMPLER_YCBCR_MODEL_CONVERSION_YCBCR_709,
+                                             VK_SAMPLER_YCBCR_RANGE_ITU_NARROW,
+                                             256, 256);
+    config.inputs[0].tiling  = TilingMode::Linear;
+    config.outputs[0].tiling = TilingMode::Linear;
+    return config;
+}
+
+TestCaseConfig TC034L_RGBA_to_YUV444_LimitedRange_Linear() {
+    TestCaseConfig config = createRGBA2YCbCr("TC034L_RGBA_to_YUV444_LimitedRange_Linear",
+                                             TestFormat::YUV444,
+                                             VK_SAMPLER_YCBCR_MODEL_CONVERSION_YCBCR_709,
+                                             VK_SAMPLER_YCBCR_RANGE_ITU_NARROW,
+                                             256, 256);
+    config.inputs[0].tiling  = TilingMode::Linear;
+    config.outputs[0].tiling = TilingMode::Linear;
+    return config;
+}
+
 TestCaseConfig TC002_RGBA_to_P010() {
     return createRGBA2YCbCr("TC002_RGBA_to_P010", TestFormat::P010);
 }
@@ -976,10 +1060,18 @@ TestCaseConfig TC100_Small_Resolution_64x64() {
                             VK_SAMPLER_YCBCR_RANGE_ITU_FULL, 64, 64);
 }
 
-TestCaseConfig TC101_Odd_Resolution_1921x1081() {
-    return createRGBA2YCbCr("TC101_Odd_Resolution_1921x1081", TestFormat::NV12,
+// Resolution that is NOT a multiple of the workgroup or block size, which is what this
+// case is for: it exercises the partial-workgroup bounds checks.
+//
+// It used to ask for 1921x1081, which a 4:2:0 format cannot describe -- Vulkan requires
+// even dimensions for _420_ (VUID-VkImageCreateInfo-format-04712/04713). The driver
+// rounded the chroma plane up, the reference model floor-divided it, and the resulting
+// mismatch looked like a filter defect. 1922x1082 is even, so it is legal, and is still
+// not a multiple of 8 or 16, so it tests the same thing the name intended.
+TestCaseConfig TC101_Unaligned_Resolution_1922x1082() {
+    return createRGBA2YCbCr("TC101_Unaligned_Resolution_1922x1082", TestFormat::NV12,
                             VK_SAMPLER_YCBCR_MODEL_CONVERSION_YCBCR_709,
-                            VK_SAMPLER_YCBCR_RANGE_ITU_FULL, 1921, 1081);
+                            VK_SAMPLER_YCBCR_RANGE_ITU_FULL, 1922, 1082);
 }
 
 TestCaseConfig TC102_4K_Resolution_3840x2160() {
@@ -1008,6 +1100,11 @@ std::vector<TestCaseConfig> getAllStandardTests() {
     return {
         // RGBA to YCbCr (7 formats - Y410 disabled: packed format needs special handling)
         TC001_RGBA_to_NV12(),
+        TC001L_RGBA_to_NV12_Linear(),
+        TC005L_RGBA_to_NV16_Linear(),
+        TC007L_RGBA_to_YUV444_Linear(),
+        TC031L_RGBA_to_NV12_LimitedRange_Linear(),
+        TC034L_RGBA_to_YUV444_LimitedRange_Linear(),
         TC002_RGBA_to_P010(),
         TC003_RGBA_to_P012(),
         TC004_RGBA_to_I420(),
@@ -1080,7 +1177,7 @@ std::vector<TestCaseConfig> getAllStandardTests() {
         
         // Edge cases
         TC100_Small_Resolution_64x64(),
-        TC101_Odd_Resolution_1921x1081(),
+        TC101_Unaligned_Resolution_1922x1082(),
         TC102_4K_Resolution_3840x2160(),
         // TC103_8K_Resolution_7680x4320(),  // May exceed GPU memory
         TC104_Minimum_Resolution_2x2(),
@@ -1091,6 +1188,14 @@ std::vector<TestCaseConfig> getSmokeTests() {
     return {
         // One from each major category
         TC001_RGBA_to_NV12(),       // 8-bit 4:2:0
+        // Linear on both sides: the ONLY case here whose pixels are actually checked.
+        // Every optimal-tiled case below can neither upload its input nor read its output
+        // back, so they verify submission, not conversion. Keep this one in the smoke set.
+        TC001L_RGBA_to_NV12_Linear(),
+        TC005L_RGBA_to_NV16_Linear(),
+        TC007L_RGBA_to_YUV444_Linear(),
+        TC031L_RGBA_to_NV12_LimitedRange_Linear(),
+        TC034L_RGBA_to_YUV444_LimitedRange_Linear(),
         TC002_RGBA_to_P010(),       // 10-bit 4:2:0
         TC005_RGBA_to_NV16(),       // 8-bit 4:2:2
         TC007_RGBA_to_YUV444(),     // 8-bit 4:4:4
