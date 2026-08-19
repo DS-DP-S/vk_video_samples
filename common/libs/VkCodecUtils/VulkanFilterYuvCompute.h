@@ -534,8 +534,22 @@ public:
          * @brief Convert YCbCr to RGBA
          *
          * Uses a compute shader to perform color space conversion from YCbCr to RGBA.
-         * Handles all YCbCr formats (NV12, P010, I420, etc.) and color primaries
-         * (BT.601, BT.709, BT.2020).
+         *
+         * @deprecated DO NOT USE IN NEW CODE, AND DO NOT ASSUME IT WORKS.
+         *
+         * No production path uses this: the encoder, decoder, TRV post-filter and display
+         * paths reference only RGBA2YCBCR, YCBCRCOPY, YCBCRCLEAR and the XFER_* modes, and
+         * display converts YCbCr with a VkSamplerYcbcrConversion in the graphics pipeline
+         * rather than with a compute pass. As of 2026-08-18 YCBCR2RGBA is referenced ONLY
+         * by vk_filter_test, where its whole test family (TC010-TC017) is disabled.
+         *
+         * It is also genuinely broken -- at least four defects, catalogued against the
+         * disabled block in tests/src/TestCases.cpp. The worst: a 3-plane input generates
+         * GLSL that does not compile and the app then SEGFAULTS on the null shader module.
+         * The claim above that it "handles all YCbCr formats" is false; it assumes 2-plane.
+         *
+         * If a YCbCr->RGBA compute pass is ever genuinely needed, fix those defects and
+         * re-enable the tests in the same change -- do not rely on this path as it stands.
          */
         YCBCR2RGBA,
         

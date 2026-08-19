@@ -2541,6 +2541,10 @@ VkFormat VulkanFilterYuvCompute::GetOutputFormat(FilterType filterType, VkFormat
     return outputFormat;
 }
 
+// DEPRECATED -- see the YCBCR2RGBA note in VulkanFilterYuvCompute.h. No production path
+// uses this generator, its test family is disabled, and it still assumes a 2-plane input
+// (a 3-plane format emits GLSL that does not compile). The chroma-ratio fix below is
+// correct as far as it goes but does not make the path usable on its own.
 size_t VulkanFilterYuvCompute::InitYCBCR2RGBA(std::string& computeShader)
 {
     // The compute filter uses two or three input images as separate planes
@@ -2629,11 +2633,27 @@ size_t VulkanFilterYuvCompute::InitYCBCR2RGBA(std::string& computeShader)
         "{\n";
     GenHandleImagePosition(shaderStr);
     GenHandleSourcePositionWithReplicate(shaderStr, m_enableRowAndColumnReplication);
+    // Chroma is fetched at the INPUT format's real subsampling ratios. This used to be a
+    // hardcoded `srcPos/2`, which halves BOTH axes: right for 4:2:0, but wrong for 4:2:2
+    // (chroma is full height, only the x axis is halved) and wrong for 4:4:4 (no
+    // subsampling at all). The result was chroma read from the wrong rows -- a large,
+    // chroma-dominated error that left luma nearly intact, which is why the whole
+    // YCbCr->RGBA test family sat disabled as a "shader generation bug in YCBCR2RGBA".
+    // The source is the same YcbcrVkFormatInfo the rest of the plane maths uses, so it
+    // cannot drift from the descriptors that were generated above.
+    const uint32_t chromaHorzRatio =
+            (mpInfo != nullptr) ? (1u << mpInfo->planesLayout.secondaryPlaneSubsampledX) : 1u;
+    const uint32_t chromaVertRatio =
+            (mpInfo != nullptr) ? (1u << mpInfo->planesLayout.secondaryPlaneSubsampledY) : 1u;
+
     shaderStr <<
         "    // Fetch from the texture.\n"
         "    float Y = imageLoad(inputImageY, ivec3(srcPos, pushConstants.srcLayer)).r;\n"
-        "    // TODO: it is /2 only for sub-sampled formats\n"
-        "    vec2 CbCr = imageLoad(inputImageCbCr, ivec3(srcPos/2, pushConstants.srcLayer)).rg;\n"
+        "    // Chroma subsampling of the input format: "
+            << chromaHorzRatio << "x" << chromaVertRatio << "\n"
+        "    ivec2 chromaPos = ivec2(srcPos.x / " << chromaHorzRatio
+            << ", srcPos.y / " << chromaVertRatio << ");\n"
+        "    vec2 CbCr = imageLoad(inputImageCbCr, ivec3(chromaPos, pushConstants.srcLayer)).rg;\n"
         "\n"
         "    vec3 ycbcr = shiftCbCr(normalizeYCbCr(vec3(Y, CbCr)));\n"
         "    vec4 rgba = vec4(convertYCbCrToRgb(ycbcr),1.0);\n"

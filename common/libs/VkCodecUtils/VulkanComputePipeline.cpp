@@ -14,6 +14,7 @@
 * limitations under the License.
 */
 
+#include <iostream>
 #include <stdio.h>
 #include <string.h>
 #include "VulkanComputePipeline.h"
@@ -52,6 +53,20 @@ VkResult VulkanComputePipeline::CreatePipeline(const VulkanDeviceContext* vkDevC
                                                     shaderSize,
                                                     VK_SHADER_STAGE_COMPUTE_BIT,
                                                     m_vkDevCtx);
+    if (m_shaderModule == VK_NULL_HANDLE) {
+        // BuildGlslShader() returns VK_NULL_HANDLE when the GLSL fails to compile, and
+        // that return was being ignored: the null module went straight into
+        // VkComputePipelineCreateInfo::stage.module and the process SEGFAULTED inside
+        // pipeline creation. A generator that emits invalid GLSL is a bug worth seeing,
+        // but it has to surface as an error rather than a crash -- the crash hides both
+        // the compiler diagnostics printed just above and which shader was at fault.
+        // Hit for real by the YCBCR2RGBA generator, whose main() assumes a 2-plane input
+        // and so emits code referencing an undeclared sampler for 3-plane formats.
+        std::cerr << "VulkanComputePipeline: shader failed to compile; "
+                     "see the compiler diagnostics above. Pipeline not created."
+                  << std::endl;
+        return VK_ERROR_INITIALIZATION_FAILED;
+    }
 
     // Create the pipeline
     VkComputePipelineCreateInfo computePipelineCreateInfo {};
