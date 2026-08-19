@@ -27,6 +27,7 @@ from typing import Dict, List, Optional
 
 from tests.libs.video_test_config_base import (
     BaseTestConfig,
+    ExpectedResult,
     SkipFilter,
     SkipRule,
     TestResult,
@@ -36,6 +37,9 @@ from tests.libs.video_test_config_base import (
     load_skip_list,
 )
 
+from tests.libs.video_test_expected_result import (
+    score_expected_rejection,
+)
 from tests.libs.video_test_platform_utils import PlatformUtils
 from tests.libs.video_test_driver_detect import (
     parse_driver_from_output, parse_system_info_from_output, SystemInfo,
@@ -420,6 +424,11 @@ class VulkanVideoTestFrameworkBase:
             "description": result.config.description,
             "status": result.status.value,
             "success": result.success,
+            "expected_result": getattr(
+                result.config, "expected_result",
+                ExpectedResult.SUCCESS).value,
+            "expected_vk_result": getattr(
+                result.config, "expected_vk_result", ""),
             "returncode": result.returncode,
             "execution_time_ms": round(
                 result.execution_time * 1000, 2
@@ -518,6 +527,18 @@ class VulkanVideoTestFrameworkBase:
         """Validate test result against expectations."""
         config = result.config
 
+        expected = getattr(config, "expected_result", ExpectedResult.SUCCESS)
+        if expected == ExpectedResult.UNSUPPORTED:
+            # A cell that never ran cannot be scored either way. Without this a
+            # negative cell whose content is absent would be reported as
+            # "expected a rejection, got skipped" -- a failure invented by the
+            # scoring, not observed from the device.
+            if result.status != VideoTestStatus.SKIPPED:
+                score_expected_rejection(result)
+            if result.warning_found and self.verbose:
+                print(f"  ⚠️  Warning detected in {config.name}")
+            return
+
         if result.status == VideoTestStatus.ERROR:
             if not result.error_message:
                 result.error_message = (
@@ -605,6 +626,19 @@ class VulkanVideoTestFrameworkBase:
 
         if output_file:
             cmd.extend(["-o", str(output_file)])
+            # Ask for RAW output explicitly. The decoder defaults to a Y4M container and,
+            # when the -o path does not end in .y4m, silently writes to "<path>.y4m"
+            # instead. The harness names its output decoded_<name>.yuv, so the file never
+            # existed at the path the MD5 check looks at, output_file.exists() was False,
+            # and the check was skipped -- for every decode cell, 48 of which carry an
+            # expected_output_md5. The suite reported 100% while verifying only that the
+            # decoder exited 0.
+            # The stored goldens are md5s of RAW YUV: h264_4k_main's recorded
+            # 716a1a1999bd67ed129b07c749351859 reproduces exactly with --yuv, and does not
+            # with the Y4M default (58d62074d022c01ef50fb8b8d6abe8a3).
+            format_flags = {"--yuv", "--y4m"}
+            if not (extra_decoder_args and format_flags.intersection(extra_decoder_args)):
+                cmd.append("--yuv")
         if no_display:
             cmd.append("--noPresent")
         if self.device_id is not None:
