@@ -1744,7 +1744,14 @@ int VkVideoDecoder::DecodePictureWithParameters(VkParserPerFrameDecodeParameters
         // The filter is now the ONLY signaler on the TL semaphore, so values
         // are monotonically increasing on the compute queue — no backward signals.
         VkSemaphore decodeToFilterSemaphore = filterCmdBuffer->GetSemaphore();
-        const VkPipelineStageFlags2KHR waitDecoderStageMasks = VK_PIPELINE_STAGE_2_VIDEO_DECODE_BIT_KHR;
+        // This submit goes to the COMPUTE queue, so the wait stage mask may only name
+        // stages that queue family supports. VK_PIPELINE_STAGE_2_VIDEO_DECODE_BIT_KHR
+        // is a video-decode stage and is not among them, which violates
+        // VUID-VkSemaphoreSubmitInfo-stageMask-03929. The work being gated is the
+        // dispatch, so wait at COMPUTE_SHADER; the leading layout transition is a
+        // transfer-class operation, so include ALL_COMMANDS to cover it rather than
+        // enumerating stages that may change as the command buffer grows.
+        const VkPipelineStageFlags2KHR waitDecoderStageMasks = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
         const uint64_t computeCompleteTimelineValue = frameSynchronizationInfo.filterCompleteTimelineValue;
         const VkPipelineStageFlags2KHR signalComputeStageMasks = VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT_KHR;
 
