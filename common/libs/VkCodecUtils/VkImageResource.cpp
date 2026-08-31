@@ -33,9 +33,14 @@ VkImageResource::VkImageResource(const VulkanDeviceContext* vkDevCtx,
     const VkMpFormatInfo* mpInfo = YcbcrVkFormatInfo(pImageCreateInfo->format);
     VkImageSubresource subResource = {};
     if (mpInfo == nullptr) {
-        m_isLinearImage = true;
-        subResource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        m_vkDevCtx->GetImageSubresourceLayout(*vkDevCtx, image, &subResource, &m_layouts[0]);
+        // local addition: only query the subresource layout for LINEAR images. The original code did this
+        // unconditionally for every non-YCbCr format, which (a) is invalid on OPTIMAL-tiled images
+        // and (b) wrongly marked them m_isLinearImage.
+        if (pImageCreateInfo->tiling == VK_IMAGE_TILING_LINEAR) {
+            m_isLinearImage = true;
+            subResource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+            m_vkDevCtx->GetImageSubresourceLayout(*vkDevCtx, image, &subResource, &m_layouts[0]);
+        }
         return;
     }
 
