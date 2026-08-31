@@ -129,6 +129,34 @@ public:
     }
 
     /**
+     * @brief Point this node's semaphore submit info at an EXTERNAL timeline semaphore/value.
+     *
+     * Unlike SetTimelineSemaphoreValue(), this does not create or use the node's own timeline
+     * semaphore; it records an externally-owned semaphore + value that some other submit signals when
+     * this image's content is ready. Used when the client fills the image itself (e.g. a client-side
+     * downsample) and signals completion on its own timeline semaphore: GetSemaphoreSubmitInfo() then
+     * returns that external edge, so consumers (e.g. the temporal cost pass reading this node as a
+     * reference frame) wait on the real content-ready event.
+     *
+     * @param semaphore The external timeline semaphore signaled when this image's content is ready.
+     * @param value The timeline value to wait for on @p semaphore.
+     * @param stageMask The pipeline stage at which the image is consumed.
+     * @param deviceIndex The device index processing this image (default: 0).
+     */
+    void SetExternalSemaphoreSubmitInfo(VkSemaphore semaphore,
+                                        uint64_t value,
+                                        VkPipelineStageFlags2 stageMask,
+                                        uint32_t deviceIndex = 0)
+    {
+        m_semaphoreSubmitInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO_KHR;
+        m_semaphoreSubmitInfo.pNext = nullptr;
+        m_semaphoreSubmitInfo.semaphore = semaphore;
+        m_semaphoreSubmitInfo.value = value;
+        m_semaphoreSubmitInfo.stageMask = stageMask;
+        m_semaphoreSubmitInfo.deviceIndex = deviceIndex;
+    }
+
+    /**
      * @brief Set the timeline semaphore value for when the image processing completes
      * @param value The timeline semaphore value to signal when processing completes
      * @param stageMask The pipeline stage at which the image will be processed
