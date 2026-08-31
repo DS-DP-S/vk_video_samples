@@ -22,16 +22,13 @@
 
 #include "VkCodecUtils/VkVideoRefCountBase.h"
 #include "VkCodecUtils/VulkanDeviceContext.h"
-#include "VkCodecUtils/VulkanShaderCompiler.h"
 #include "VkCodecUtils/VkImageResource.h"
 #include "VkCodecUtils/VulkanCommandBufferPool.h"
-#include "VkCodecUtils/VulkanSemaphoreDump.h"
 
-struct VulkanShaderInput {
-    const std::string     shader;
-    VkShaderStageFlagBits type;
-    uint32_t              shaderIsFsPath : 1;
-};
+// Local deviation: the GLSL-at-runtime path is gone. VkCodecUtils/VulkanShaderCompiler.h (libshaderc),
+// the m_vulkanShaderCompiler member, CreateShaderModule() and the unused VulkanShaderInput struct were
+// removed - the AQ filters build their pipelines from the pre-compiled SPIR-V in aq-vulkan/kernels.
+// The `if (false)` VulkanSemaphoreDump debug dumps went with VkCodecUtils/VulkanSemaphoreDump.h.
 
 class VulkanFilter : public VulkanCommandBufferPool
 {
@@ -44,7 +41,6 @@ public:
                  uint32_t queueFamilyIndex,
                  uint32_t queueIndex)
         : VulkanCommandBufferPool(vkDevCtx),
-          m_vulkanShaderCompiler(),
           m_queueFamilyIndex(queueFamilyIndex),
           m_queueIndex(queueIndex),
           m_queue()
@@ -56,14 +52,6 @@ public:
     virtual ~VulkanFilter()
     {
         assert(m_vkDevCtx != nullptr);
-    }
-
-    VkShaderModule CreateShaderModule(const char *shaderCode, size_t shaderSize,
-                                      VkShaderStageFlagBits type)
-    {
-        return m_vulkanShaderCompiler.BuildGlslShader(shaderCode, shaderSize,
-                                                      type,
-                                                      m_vkDevCtx);
     }
 
     void DestroyShaderModule(VkShaderModule shaderModule)
@@ -142,11 +130,6 @@ public:
         submitInfo.signalSemaphoreInfoCount = signalSemaphoreCount;
         submitInfo.pSignalSemaphoreInfos = signalSemaphoreInfos;
 
-        if (false) {
-            // Dump semaphore info for debugging
-            VulkanSemaphoreDump::DumpSemaphoreInfo(submitInfo, "DECODE FILTER", 0);
-        }
-
         assert(VK_NOT_READY == m_vkDevCtx->GetFenceStatus(*m_vkDevCtx, filterCompleteFence));
         VkResult result = m_vkDevCtx->QueueSubmit2KHR(m_queue, 1, &submitInfo, filterCompleteFence);
 
@@ -213,11 +196,6 @@ public:
         submitInfo.signalSemaphoreInfoCount = signalSemaphoreCount;
         submitInfo.pSignalSemaphoreInfos = signalSemaphoreInfos;
 
-        if (false) {
-            // Dump semaphore info for debugging
-            VulkanSemaphoreDump::DumpSemaphoreInfo(submitInfo, "DECODE FILTER", 0);
-        }
-
         assert(VK_NOT_READY == m_vkDevCtx->GetFenceStatus(*m_vkDevCtx, filterCompleteFence));
         VkResult result = m_vkDevCtx->QueueSubmit2KHR(m_queue, 1, &submitInfo, filterCompleteFence);
 
@@ -226,7 +204,6 @@ public:
 
 
 protected:
-    VulkanShaderCompiler m_vulkanShaderCompiler;
     uint32_t             m_queueFamilyIndex;
     uint32_t             m_queueIndex;
     VkQueue              m_queue;
