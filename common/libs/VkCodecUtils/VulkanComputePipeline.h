@@ -17,10 +17,9 @@
 #ifndef _VULKANCOMPUTEPIPELINE_H_
 #define _VULKANCOMPUTEPIPELINE_H_
 
-#include <vulkan_interfaces.h>
+#include <vulkan/vulkan.h>
 #include "VkCodecUtils/VulkanDeviceContext.h"
 #include "VkCodecUtils/VulkanDescriptorSetLayout.h"
-#include "VkCodecUtils/VulkanShaderCompiler.h"
 
 class VulkanComputePipeline
 {
@@ -78,14 +77,8 @@ public:
     }
 
 
-    // Create Compute Pipeline
-    VkResult CreatePipeline(const VulkanDeviceContext* vkDevCtx,
-                            VulkanShaderCompiler& shaderCompiler,
-                            const char* shaderCode, size_t shaderSize,
-                            const char* pEntryName,
-                            uint32_t workgroupSizeX, // usually 16
-                            uint32_t workgroupSizeY, // usually 16
-                            const VulkanDescriptorSetLayout* pBufferDescriptorSets);
+    // Local deviation: the GLSL CreatePipeline() overload (VulkanComputePipeline.cpp) was removed with
+    // VulkanShaderCompiler / libshaderc. The AQ filters use the Set* path below with pre-compiled SPIR-V.
 
     VkPipeline getPipeline() {
         return m_pipeline;
