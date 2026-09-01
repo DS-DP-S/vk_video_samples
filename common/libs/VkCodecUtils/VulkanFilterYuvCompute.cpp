@@ -106,13 +106,14 @@ VkResult VulkanFilterYuvCompute::Init(const VkSamplerYcbcrConversionCreateInfo* 
          break;
     }
 
-    return m_computePipeline.CreatePipeline(m_vkDevCtx, m_vulkanShaderCompiler,
-                                            computeShader.c_str(), computeShaderSize,
-                                            "main",
-                                            m_workgroupSizeX, m_workgroupSizeY,
-                                            &m_descriptorSetLayout);
-
-    return VK_ERROR_LAYER_NOT_PRESENT;
+    // Local deviation: this used to compile `computeShader` (dynamically generated GLSL, depends on
+    // m_filterType/format) via VulkanComputePipeline::CreatePipeline()+VulkanShaderCompiler (shaderc).
+    // That path was removed fleet-wide in favor of pre-compiled SPIR-V (see VulkanComputePipeline.h /
+    // VulkanFilter.h); this filter still generates GLSL text at runtime instead of selecting a
+    // pre-compiled SPIR-V variant, so pipeline creation is not yet wired up.
+    (void)computeShader;
+    (void)computeShaderSize;
+    return VK_ERROR_FEATURE_NOT_PRESENT;
 }
 
 VkResult VulkanFilterYuvCompute::InitDescriptorSetLayout(uint32_t maxNumFrames)
