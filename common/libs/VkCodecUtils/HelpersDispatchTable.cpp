@@ -245,13 +245,13 @@ void InitDispatchTableMiddle(VkInstance instance, bool include_bottom, VkInterfa
     pVkFunctions->DestroyDescriptorUpdateTemplate = reinterpret_cast<PFN_vkDestroyDescriptorUpdateTemplate>(getInstanceProcAddrFunc(instance, "vkDestroyDescriptorUpdateTemplate"));
     pVkFunctions->UpdateDescriptorSetWithTemplate = reinterpret_cast<PFN_vkUpdateDescriptorSetWithTemplate>(getInstanceProcAddrFunc(instance, "vkUpdateDescriptorSetWithTemplate"));
     pVkFunctions->GetDescriptorSetLayoutSupport = reinterpret_cast<PFN_vkGetDescriptorSetLayoutSupport>(getInstanceProcAddrFunc(instance, "vkGetDescriptorSetLayoutSupport"));
-    pVkFunctions->CmdPushDescriptorSetKHR = reinterpret_cast<PFN_vkCmdPushDescriptorSetKHR>(getInstanceProcAddrFunc(instance, "vkCmdPushDescriptorSetKHR"));
+    pVkFunctions->CmdPushDescriptorSetKHR = reinterpret_cast<PFN_vkCmdPushDescriptorSetKHR>(getInstanceProcAddrFunc(instance, "vkCmdPushDescriptorSet"));
     pVkFunctions->GetDescriptorSetLayoutSizeEXT = reinterpret_cast<PFN_vkGetDescriptorSetLayoutSizeEXT>(getInstanceProcAddrFunc(instance, "vkGetDescriptorSetLayoutSizeEXT"));
     pVkFunctions->GetDescriptorSetLayoutBindingOffsetEXT = reinterpret_cast<PFN_vkGetDescriptorSetLayoutBindingOffsetEXT>(getInstanceProcAddrFunc(instance, "vkGetDescriptorSetLayoutBindingOffsetEXT"));
     pVkFunctions->GetDescriptorEXT = reinterpret_cast<PFN_vkGetDescriptorEXT>(getInstanceProcAddrFunc(instance, "vkGetDescriptorEXT"));
     pVkFunctions->CmdBindDescriptorBuffersEXT = reinterpret_cast<PFN_vkCmdBindDescriptorBuffersEXT>(getInstanceProcAddrFunc(instance, "vkCmdBindDescriptorBuffersEXT"));
     pVkFunctions->CmdSetDescriptorBufferOffsetsEXT = reinterpret_cast<PFN_vkCmdSetDescriptorBufferOffsetsEXT>(getInstanceProcAddrFunc(instance, "vkCmdSetDescriptorBufferOffsetsEXT"));
-    pVkFunctions->GetBufferDeviceAddressKHR = reinterpret_cast<PFN_vkGetBufferDeviceAddressKHR>(getInstanceProcAddrFunc(instance, "vkGetBufferDeviceAddressKHR"));
+    pVkFunctions->GetBufferDeviceAddressKHR = reinterpret_cast<PFN_vkGetBufferDeviceAddressKHR>(getInstanceProcAddrFunc(instance, "vkGetBufferDeviceAddress"));
     pVkFunctions->GetMemoryFdKHR = reinterpret_cast<PFN_vkGetMemoryFdKHR>(getInstanceProcAddrFunc(instance, "vkGetMemoryFdKHR"));
     pVkFunctions->GetFenceFdKHR = reinterpret_cast<PFN_vkGetFenceFdKHR>(getInstanceProcAddrFunc(instance, "vkGetFenceFdKHR"));
     pVkFunctions->CreateSwapchainKHR = reinterpret_cast<PFN_vkCreateSwapchainKHR>(getInstanceProcAddrFunc(instance, "vkCreateSwapchainKHR"));
@@ -300,12 +300,12 @@ void InitDispatchTableMiddle(VkInstance instance, bool include_bottom, VkInterfa
 #ifdef VK_USE_VIDEO_ENCODE_QUEUE
     pVkFunctions->GetEncodedVideoSessionParametersKHR = reinterpret_cast<PFN_vkGetEncodedVideoSessionParametersKHR>(getInstanceProcAddrFunc(instance, "vkGetEncodedVideoSessionParametersKHR"));
 #endif
-    pVkFunctions->CmdSetEvent2KHR = reinterpret_cast<PFN_vkCmdSetEvent2KHR>(getInstanceProcAddrFunc(instance, "vkCmdSetEvent2KHR"));
-    pVkFunctions->CmdResetEvent2KHR = reinterpret_cast<PFN_vkCmdResetEvent2KHR>(getInstanceProcAddrFunc(instance, "vkCmdResetEvent2KHR"));
-    pVkFunctions->CmdWaitEvents2KHR = reinterpret_cast<PFN_vkCmdWaitEvents2KHR>(getInstanceProcAddrFunc(instance, "vkCmdWaitEvents2KHR"));
-    pVkFunctions->CmdPipelineBarrier2KHR = reinterpret_cast<PFN_vkCmdPipelineBarrier2KHR>(getInstanceProcAddrFunc(instance, "vkCmdPipelineBarrier2KHR"));
-    pVkFunctions->CmdWriteTimestamp2KHR = reinterpret_cast<PFN_vkCmdWriteTimestamp2KHR>(getInstanceProcAddrFunc(instance, "vkCmdWriteTimestamp2KHR"));
-    pVkFunctions->QueueSubmit2KHR = reinterpret_cast<PFN_vkQueueSubmit2KHR>(getInstanceProcAddrFunc(instance, "vkQueueSubmit2KHR"));
+    pVkFunctions->CmdSetEvent2KHR = reinterpret_cast<PFN_vkCmdSetEvent2KHR>(getInstanceProcAddrFunc(instance, "vkCmdSetEvent2"));
+    pVkFunctions->CmdResetEvent2KHR = reinterpret_cast<PFN_vkCmdResetEvent2KHR>(getInstanceProcAddrFunc(instance, "vkCmdResetEvent2"));
+    pVkFunctions->CmdWaitEvents2KHR = reinterpret_cast<PFN_vkCmdWaitEvents2KHR>(getInstanceProcAddrFunc(instance, "vkCmdWaitEvents2"));
+    pVkFunctions->CmdPipelineBarrier2KHR = reinterpret_cast<PFN_vkCmdPipelineBarrier2KHR>(getInstanceProcAddrFunc(instance, "vkCmdPipelineBarrier2"));
+    pVkFunctions->CmdWriteTimestamp2KHR = reinterpret_cast<PFN_vkCmdWriteTimestamp2KHR>(getInstanceProcAddrFunc(instance, "vkCmdWriteTimestamp2"));
+    pVkFunctions->QueueSubmit2KHR = reinterpret_cast<PFN_vkQueueSubmit2KHR>(getInstanceProcAddrFunc(instance, "vkQueueSubmit2"));
 }
 
 void InitDispatchTableBottom(VkInstance instance, VkDevice dev, VkInterfaceFunctions* pVkFunctions)
@@ -455,13 +455,13 @@ void InitDispatchTableBottom(VkInstance instance, VkDevice dev, VkInterfaceFunct
     pVkFunctions->DestroyDescriptorUpdateTemplate = reinterpret_cast<PFN_vkDestroyDescriptorUpdateTemplate>(getDeviceProcAddrFunc(dev, "vkDestroyDescriptorUpdateTemplate"));
     pVkFunctions->UpdateDescriptorSetWithTemplate = reinterpret_cast<PFN_vkUpdateDescriptorSetWithTemplate>(getDeviceProcAddrFunc(dev, "vkUpdateDescriptorSetWithTemplate"));
     pVkFunctions->GetDescriptorSetLayoutSupport = reinterpret_cast<PFN_vkGetDescriptorSetLayoutSupport>(getDeviceProcAddrFunc(dev, "vkGetDescriptorSetLayoutSupport"));
-    pVkFunctions->CmdPushDescriptorSetKHR = reinterpret_cast<PFN_vkCmdPushDescriptorSetKHR>(getDeviceProcAddrFunc(dev, "vkCmdPushDescriptorSetKHR"));
+    pVkFunctions->CmdPushDescriptorSetKHR = reinterpret_cast<PFN_vkCmdPushDescriptorSetKHR>(getDeviceProcAddrFunc(dev, "vkCmdPushDescriptorSet"));
     pVkFunctions->GetDescriptorSetLayoutSizeEXT = reinterpret_cast<PFN_vkGetDescriptorSetLayoutSizeEXT>(getDeviceProcAddrFunc(dev, "vkGetDescriptorSetLayoutSizeEXT"));
     pVkFunctions->GetDescriptorSetLayoutBindingOffsetEXT = reinterpret_cast<PFN_vkGetDescriptorSetLayoutBindingOffsetEXT>(getDeviceProcAddrFunc(dev, "vkGetDescriptorSetLayoutBindingOffsetEXT"));
     pVkFunctions->GetDescriptorEXT = reinterpret_cast<PFN_vkGetDescriptorEXT>(getDeviceProcAddrFunc(dev, "vkGetDescriptorEXT"));
     pVkFunctions->CmdBindDescriptorBuffersEXT = reinterpret_cast<PFN_vkCmdBindDescriptorBuffersEXT>(getDeviceProcAddrFunc(dev, "vkCmdBindDescriptorBuffersEXT"));
     pVkFunctions->CmdSetDescriptorBufferOffsetsEXT = reinterpret_cast<PFN_vkCmdSetDescriptorBufferOffsetsEXT>(getDeviceProcAddrFunc(dev, "vkCmdSetDescriptorBufferOffsetsEXT"));
-    pVkFunctions->GetBufferDeviceAddressKHR = reinterpret_cast<PFN_vkGetBufferDeviceAddressKHR>(getDeviceProcAddrFunc(dev, "vkGetBufferDeviceAddressKHR"));
+    pVkFunctions->GetBufferDeviceAddressKHR = reinterpret_cast<PFN_vkGetBufferDeviceAddressKHR>(getDeviceProcAddrFunc(dev, "vkGetBufferDeviceAddress"));
     pVkFunctions->GetMemoryFdKHR = reinterpret_cast<PFN_vkGetMemoryFdKHR>(getDeviceProcAddrFunc(dev, "vkGetMemoryFdKHR"));
     pVkFunctions->GetFenceFdKHR = reinterpret_cast<PFN_vkGetFenceFdKHR>(getDeviceProcAddrFunc(dev, "vkGetFenceFdKHR"));
     pVkFunctions->CreateSwapchainKHR = reinterpret_cast<PFN_vkCreateSwapchainKHR>(getDeviceProcAddrFunc(dev, "vkCreateSwapchainKHR"));
@@ -510,12 +510,12 @@ void InitDispatchTableBottom(VkInstance instance, VkDevice dev, VkInterfaceFunct
 #ifdef VK_USE_VIDEO_ENCODE_QUEUE
     pVkFunctions->GetEncodedVideoSessionParametersKHR = reinterpret_cast<PFN_vkGetEncodedVideoSessionParametersKHR>(getDeviceProcAddrFunc(dev, "vkGetEncodedVideoSessionParametersKHR"));
 #endif
-    pVkFunctions->CmdSetEvent2KHR = reinterpret_cast<PFN_vkCmdSetEvent2KHR>(getDeviceProcAddrFunc(dev, "vkCmdSetEvent2KHR"));
-    pVkFunctions->CmdResetEvent2KHR = reinterpret_cast<PFN_vkCmdResetEvent2KHR>(getDeviceProcAddrFunc(dev, "vkCmdResetEvent2KHR"));
-    pVkFunctions->CmdWaitEvents2KHR = reinterpret_cast<PFN_vkCmdWaitEvents2KHR>(getDeviceProcAddrFunc(dev, "vkCmdWaitEvents2KHR"));
-    pVkFunctions->CmdPipelineBarrier2KHR = reinterpret_cast<PFN_vkCmdPipelineBarrier2KHR>(getDeviceProcAddrFunc(dev, "vkCmdPipelineBarrier2KHR"));
-    pVkFunctions->CmdWriteTimestamp2KHR = reinterpret_cast<PFN_vkCmdWriteTimestamp2KHR>(getDeviceProcAddrFunc(dev, "vkCmdWriteTimestamp2KHR"));
-    pVkFunctions->QueueSubmit2KHR = reinterpret_cast<PFN_vkQueueSubmit2KHR>(getDeviceProcAddrFunc(dev, "vkQueueSubmit2KHR"));
+    pVkFunctions->CmdSetEvent2KHR = reinterpret_cast<PFN_vkCmdSetEvent2KHR>(getDeviceProcAddrFunc(dev, "vkCmdSetEvent2"));
+    pVkFunctions->CmdResetEvent2KHR = reinterpret_cast<PFN_vkCmdResetEvent2KHR>(getDeviceProcAddrFunc(dev, "vkCmdResetEvent2"));
+    pVkFunctions->CmdWaitEvents2KHR = reinterpret_cast<PFN_vkCmdWaitEvents2KHR>(getDeviceProcAddrFunc(dev, "vkCmdWaitEvents2"));
+    pVkFunctions->CmdPipelineBarrier2KHR = reinterpret_cast<PFN_vkCmdPipelineBarrier2KHR>(getDeviceProcAddrFunc(dev, "vkCmdPipelineBarrier2"));
+    pVkFunctions->CmdWriteTimestamp2KHR = reinterpret_cast<PFN_vkCmdWriteTimestamp2KHR>(getDeviceProcAddrFunc(dev, "vkCmdWriteTimestamp2"));
+    pVkFunctions->QueueSubmit2KHR = reinterpret_cast<PFN_vkQueueSubmit2KHR>(getDeviceProcAddrFunc(dev, "vkQueueSubmit2"));
 }
 
 } // namespace vk

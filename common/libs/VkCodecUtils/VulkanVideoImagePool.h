@@ -19,6 +19,7 @@
 
 #include <assert.h>
 #include <stdint.h>
+#include <vector>
 
 #include "VkCodecUtils/VkVideoRefCountBase.h"
 #include "vulkan_interfaces.h"
@@ -273,6 +274,7 @@ private:
     std::atomic<int32_t>                  m_refCount;
     std::mutex                            m_queueMutex;
     uint32_t                              m_queueFamilyIndex;
+    std::vector<uint32_t>                 m_sharedQueueFamilyIndices;
     VkVideoCoreProfile                    m_videoProfile;
     VkImageCreateInfo                     m_imageCreateInfo;
     VkMemoryPropertyFlags                 m_requiredMemProps;

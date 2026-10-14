@@ -328,9 +328,23 @@ VkResult VulkanVideoImagePool::Configure(const VulkanDeviceContext*   vkDevCtx,
     m_imageCreateInfo.samples = VK_SAMPLE_COUNT_1_BIT;
     m_imageCreateInfo.tiling = useLinearImage ? VK_IMAGE_TILING_LINEAR : VK_IMAGE_TILING_OPTIMAL;
     m_imageCreateInfo.usage = imageUsage;
-    m_imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    m_imageCreateInfo.queueFamilyIndexCount = 1;
-    m_imageCreateInfo.pQueueFamilyIndices = &m_queueFamilyIndex;
+    // local addition: the images are used by several queue families (e.g. written on graphics, read by the AQ
+    // compute passes), so share them concurrently over all queue families instead of requiring ownership transfers.
+    uint32_t queueFamilyCount = 0;
+    vkDevCtx->GetPhysicalDeviceQueueFamilyProperties2(vkDevCtx->getPhysicalDevice(), &queueFamilyCount, nullptr);
+    m_sharedQueueFamilyIndices.clear();
+    for (uint32_t i = 0; i < queueFamilyCount; i++) {
+        m_sharedQueueFamilyIndices.push_back(i);
+    }
+    if (queueFamilyCount > 1) {
+        m_imageCreateInfo.sharingMode = VK_SHARING_MODE_CONCURRENT;
+        m_imageCreateInfo.queueFamilyIndexCount = queueFamilyCount;
+        m_imageCreateInfo.pQueueFamilyIndices = m_sharedQueueFamilyIndices.data();
+    } else {
+        m_imageCreateInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        m_imageCreateInfo.queueFamilyIndexCount = 1;
+        m_imageCreateInfo.pQueueFamilyIndices = &m_queueFamilyIndex;
+    }
     m_imageCreateInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     m_imageCreateInfo.flags = VK_IMAGE_CREATE_MUTABLE_FORMAT_BIT;
 

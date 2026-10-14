@@ -208,8 +208,9 @@ inline VkResult MapMemoryTypeToIndex(const VkInterfaceFunctions* vkIf,
                                      uint32_t typeBits,
                                      VkFlags requirements_mask, uint32_t *typeIndex)
 {
-    VkPhysicalDeviceMemoryProperties memoryProperties;
-    vkIf->GetPhysicalDeviceMemoryProperties(vkPhysicalDev, &memoryProperties);
+    VkPhysicalDeviceMemoryProperties2 memoryProperties2{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2};
+    vkIf->GetPhysicalDeviceMemoryProperties2(vkPhysicalDev, &memoryProperties2);
+    const VkPhysicalDeviceMemoryProperties &memoryProperties = memoryProperties2.memoryProperties;
     // Search memtypes to find first index with those properties
     for (uint32_t i = 0; i < 32; i++) {
         if ((typeBits & 1) == 1) {

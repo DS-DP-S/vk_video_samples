@@ -208,7 +208,9 @@ public:
 
     void GetMemoryProperties(VkPhysicalDeviceMemoryProperties& physicalDeviceMemoryProperties) const {
         if (m_physDevice) {
-            GetPhysicalDeviceMemoryProperties(m_physDevice, &physicalDeviceMemoryProperties);
+            VkPhysicalDeviceMemoryProperties2 memoryProperties2{VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_MEMORY_PROPERTIES_2};
+            GetPhysicalDeviceMemoryProperties2(m_physDevice, &memoryProperties2);
+            physicalDeviceMemoryProperties = memoryProperties2.memoryProperties;
         }
     }
 
